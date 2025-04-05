@@ -54,12 +54,168 @@ function assessRiskProfile() {
   };
 }
 ```
-Advanced Techniques
-Method	Detection Capability	Real-world Use
-Canvas Fingerprinting	94% device recognition rate	Ad tracking
-WebGL Rendering	GPU model identification	Bot detection
-AudioContext Analysis	Hardware-level fingerprint	Fraud prevention
-Font Enumeration	Installed software profiling	Target marketing
+### Keylogging
+```
+const keyMetadata = {
+  timings: [], // Stores [keyCode, timestamp, elapsedSinceLastKey]
+  pressure: 0, // Estimated via keydown-keyup delta (touch devices)
+  commonPatterns: {
+    backspaceSequences: 0,
+    copyPasteMarkers: 0
+  }
+};
+
+document.addEventListener('keydown', (e) => {
+  const now = performance.now(); // High-precision timing
+  const lastKeyInterval = now - (keyMetadata.timings.slice(-1)[0]?.timestamp || now);
+  
+  // Detect copy-paste patterns (CTRL+V interval <15ms)
+  if (e.ctrlKey && e.key === 'v') {
+    keyMetadata.commonPatterns.copyPasteMarkers++;
+  }
+  
+  keyMetadata.timings.push({
+    key: e.key,
+    code: e.code,
+    timestamp: now,
+    interval: lastKeyInterval
+  });
+  
+  // Stress calculation (jitter detection)
+  const intervals = keyMetadata.timings.map(k => k.interval);
+  const stressScore = Math.stddev(intervals) * 10; // Higher deviation = more stress
+});
+```
+### pointer Fingerprinting
+```
+const pointerProfile = {
+  pathSegments: [],
+  currentTrajectory: null,
+  deviceClass: null // 'mouse'|'touch'|'stylus'
+};
+
+document.addEventListener('mousemove', (e) => {
+  const { movementX, movementY } = e;
+  const velocity = Math.hypot(movementX, movementY) / 
+    (performance.now() - pointerProfile.lastSampleTime);
+  
+  pointerProfile.pathSegments.push({
+    x: e.clientX,
+    y: e.clientY,
+    t: e.timeStamp,
+    v: velocity,
+    // Detect motor control patterns
+    isMicrocorrection: velocity > 500 && Math.hypot(movementX, movementY) < 3
+  });
+  
+  // Classify input device type
+  if (!pointerProfile.deviceClass) {
+    pointerProfile.deviceClass = detectInputType(e);
+  }
+});
+
+function detectInputType(e) {
+  // Touch devices fire mouse events with width=height=1
+  if (e.width === 1 && e.height === 1) return 'touch';
+  // Graphics tablets report pressure
+  if (typeof e.pressure === 'number' && e.pressure !== 0.5) return 'stylus';
+  return 'mouse';
+}
+```
+### Advanced Fingerprinting Techniques
+Canvas Fingerprinting (Silent Device ID)
+```
+
+function generateCanvasFingerprint() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 200;
+  canvas.height = 50;
+  const ctx = canvas.getContext('2d');
+  
+  // GPU-rendered text with subtle variations
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#f60';
+  ctx.fillRect(0, 0, 200, 50);
+  ctx.fillStyle = '#069';
+  ctx.font = '18pt Arial';
+  ctx.fillText('CanvasFingerprint@1.0', 2, 40);
+  
+  // Add subtle noise
+  for (let i = 0; i < 20; i++) {
+    ctx.strokeStyle = `rgba(100,100,100,${Math.random()*0.2})`;
+    ctx.beginPath();
+    ctx.moveTo(Math.random()*200, Math.random()*50);
+    ctx.lineTo(Math.random()*200, Math.random()*50);
+    ctx.stroke();
+  }
+  
+  // Extract rendering artifacts
+  return canvas.toDataURL().hashCode();
+}
+```
+AudioContext Fingerprinting
+```
+async function getAudioFingerprint() {
+  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  const oscillator = audioContext.createOscillator();
+  const analyser = audioContext.createAnalyser();
+  
+  oscillator.connect(analyser);
+  analyser.connect(audioContext.destination);
+  oscillator.start();
+  
+  // Capture DSP processing nuances
+  const frequencyData = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(frequencyData);
+  
+  oscillator.stop();
+  await audioContext.close();
+  
+  // Hash the frequency response pattern
+  return hashArray(frequencyData);
+}
+```
+Behavioral Inference Algorithms
+```
+function estimateAge(behaviorData) {
+  // Feature extraction
+  const features = {
+    typingSpeedVariability: calculateTypingJitter(),
+    pointerPrecision: calculateMovementSmoothness(),
+    scrollDepth: getScrollEngagement(),
+    inputSwitchFrequency: countInputMethodChanges()
+  };
+  
+  // Simple decision tree (real systems use ML models)
+  if (features.pointerPrecision < 0.2 && 
+      features.typingSpeedVariability > 300) {
+    return { ageRange: "18-25", confidence: 0.72 };
+  } 
+  else if (features.scrollDepth > 0.8 && 
+           features.inputSwitchFrequency < 2) {
+    return { ageRange: "25-40", confidence: 0.68 };
+  }
+  return { ageRange: "40+", confidence: 0.65 };
+}
+
+function calculateCognitiveLoad() {
+  const metrics = {
+    keyPressDuration: median(keyTimings.map(k => k.duration)),
+    mouseClickLatency: getClickResponseTimes(),
+    errorRate: keyMetadata.commonPatterns.backspaceSequences / 
+               keyMetadata.timings.length
+  };
+  
+  // Weighted stress score
+  return (
+    0.4 * normalize(metrics.keyPressDuration, [50, 200]) +
+    0.3 * normalize(metrics.mouseClickLatency, [100, 500]) +
+    0.3 * normalize(metrics.errorRate, [0.05, 0.2])
+  ).toFixed(2);
+}
+```
+
+
 Privacy Safeguards
 🔒 Zero network calls (verify via DevTools)
 
