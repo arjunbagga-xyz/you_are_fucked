@@ -1,7 +1,5 @@
 # 🔍 DIGITAL SURVEILLANCE SIMULATION
 
-![Cyberpunk Interface Screenshot](demo-screenshot.png)
-
 *A live demonstration of how minimal browser interactions can reveal startling amounts of personal data*
 
 ## 🌐 Overview
