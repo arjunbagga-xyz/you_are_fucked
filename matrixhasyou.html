@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>You are fucked</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        
+        :root {
+            --matrix-green: #20c20e;
+            --neon-red: #ff5555;
+            --neon-blue: #0ff;
+            --neon-purple: #f0f;
+        }
+        
+        body {
+            background-color: black;
+            color: var(--matrix-green);
+            font-family: 'Share Tech Mono', monospace;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+            line-height: 1.4;
+        }
+        
+        .glitch {
+            position: relative;
+            animation: glitch 1s linear infinite;
+        }
+        
+        @keyframes glitch {
+            0% { text-shadow: 0.05em 0 0 var(--neon-blue), -0.05em -0.025em 0 var(--neon-purple); }
+            14% { text-shadow: 0.05em 0 0 var(--neon-blue), -0.05em -0.025em 0 var(--neon-purple); }
+            15% { text-shadow: -0.05em -0.025em 0 var(--neon-blue), 0.025em 0.025em 0 var(--neon-purple); }
+            49% { text-shadow: -0.05em -0.025em 0 var(--neon-blue), 0.025em 0.025em 0 var(--neon-purple); }
+            50% { text-shadow: 0.025em 0.05em 0 var(--neon-blue), 0.05em 0 0 var(--neon-purple); }
+            99% { text-shadow: 0.025em 0.05em 0 var(--neon-blue), 0.05em 0 0 var(--neon-purple); }
+            100% { text-shadow: -0.025em 0 0 var(--neon-blue), -0.025em -0.025em 0 var(--neon-purple); }
+        }
+        
+        .terminal {
+            border: 1px solid var(--matrix-green);
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 0 10px var(--matrix-green);
+            position: relative;
+        }
+        
+        .blink {
+            animation: blink 1s step-end infinite;
+        }
+        
+        @keyframes blink {
+            from, to { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        .warning {
+            color: var(--neon-red);
+            text-shadow: 0 0 5px #ff0000;
+        }
+        
+        .critical {
+            color: white;
+            background-color: var(--neon-red);
+            padding: 2px 5px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.8; }
+            50% { opacity: 1; }
+            100% { opacity: 0.8; }
+        }
+        
+        .command {
+            color: var(--neon-blue);
+        }
+        
+        .live-data {
+            background-color: rgba(32, 194, 14, 0.1);
+            padding: 2px 5px;
+            border: 1px dashed var(--matrix-green);
+        }
+        
+        .inference {
+            color: var(--neon-purple);
+            font-style: italic;
+        }
+        
+        .keybuffer {
+            font-family: monospace;
+            letter-spacing: 2px;
+            background-color: #111;
+            padding: 5px;
+            min-height: 20px;
+            display: inline-block;
+            min-width: 100px;
+        }
+
+        .threat-assessment {
+            border-color: var(--neon-red);
+            box-shadow: 0 0 10px var(--neon-red);
+            margin-top: 20px;
+        }
+        
+        ul {
+            list-style-type: '> ';
+            padding-left: 20px;
+        }
+        
+        li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="glitch">You are being watched (a good question is by whom?)</h1>
+    <p class="warning">THE MATRIX HAS YOU</p>
+    <p class="warning">DON'T PANIC</p>
+    
+    
+    <div class="terminal">
+        <div id="output">
+            <p>> <span class="command">panopticon.exe</span> --mode=full</p>
+            <p>> Booting surveillance modules...</p>
+            <p>> <span class="warning">// NO DATA LEAVES YOUR MACHINE. CHECK YOURSELF. Press F12 and open dev options and go to network tab</span></p>
+            <br>
+            <div id="scanStatus">> Establishing data channels...<span class="blink">_</span></div>
+            <br>
+            <p class="critical">> CAMERA = ACCESSIBLE, MICROPHONE = ACCESSIBLE</p>
+            <div id="liveBehavior">
+                <p>> <span class="command">live_surveillance.exe</span></p>
+                <p>> Keystroke buffer: <span class="keybuffer" id="keyBuffer">[awaiting input]</span></p>
+                <p>> Last key: <span class="live-data" id="lastKey">[none]</span> → <span class="inference" id="keyInference">Initializing...</span></p>
+                <p id="movementTracker">> Mouse velocity: <span class="live-data" id="moveSpeed">0</span>px/s → <span class="inference" id="moveInference">Initializing...</span></p>
+                <p>> Age estimate: <span class="live-data" id="ageEstimate">--</span> → <span class="inference" id="ageInference">Calculating...</span></p>
+                <p>> Stress level: <span class="live-data" id="stressLevel">--</span> → <span class="inference" id="stressInference">Analyzing...</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =================================
+        // ENHANCED LIVE TRACKING (PC + MOBILE)
+        // =================================
+        
+        // Tracking variables
+        const keyBuffer = [];
+        const keyTimestamps = [];
+        const touchEvents = [];
+        const scrollDepths = [];
+        let lastMoveTime = Date.now();
+        let lastMoveX = 0;
+        let lastMoveY = 0;
+        const moveSpeeds = [];
+        const stressIndicators = [];
+        
+        // Detect device type
+        const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        
+        // Initialize UI based on device
+        if (isMobile) {
+            document.getElementById('keyBuffer').textContent = '[touch screen active]';
+            document.getElementById('movementTracker').innerHTML = 
+                '> Touch velocity: <span class="live-data" id="touchSpeed">0</span>px/s → <span class="inference" id="touchInference">Initializing...</span>';
+        } else {
+            document.getElementById('keyBuffer').textContent = '[start typing]';
+        }
+        
+        // Track keyboard input (works on mobile keyboards too)
+        document.addEventListener('keydown', (e) => {
+            if (keyBuffer.length >= 20) keyBuffer.shift();
+            keyBuffer.push(
+                e.key === ' ' ? '␣' : 
+                e.key === 'Backspace' ? '⌫' : 
+                e.key === 'Enter' ? '↵' : 
+                e.key.length > 1 ? `[${e.key}]` : e.key
+            );
+            
+            keyTimestamps.push(Date.now());
+            if (keyTimestamps.length > 10) keyTimestamps.shift();
+            
+            document.getElementById('keyBuffer').textContent = keyBuffer.join('');
+            document.getElementById('lastKey').textContent = 
+                `${e.key === ' ' ? 'SPACE' : e.key === 'Backspace' ? 'BACKSPACE' : 
+                  e.key === 'Enter' ? 'ENTER' : e.key} (${e.keyCode})`;
+            
+            updateInferences();
+        });
+        
+        // Track mouse/touch movements
+        const pointerMoveHandler = (e) => {
+            const now = Date.now();
+            const timeDiff = (now - lastMoveTime) / 1000;
+            const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+            const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+            
+            if (timeDiff > 0 && lastMoveX !== 0 && lastMoveY !== 0) {
+                const distance = Math.sqrt(
+                    Math.pow(clientX - lastMoveX, 2) + 
+                    Math.pow(clientY - lastMoveY, 2)
+                );
+                const speed = Math.round(distance / timeDiff);
+                
+                if (speed > 5) {
+                    if (isMobile) {
+                        touchEvents.push(speed);
+                        if (touchEvents.length > 5) touchEvents.shift();
+                        document.getElementById('touchSpeed').textContent = speed;
+                    } else {
+                        moveSpeeds.push(speed);
+                        if (moveSpeeds.length > 5) moveSpeeds.shift();
+                        document.getElementById('moveSpeed').textContent = speed;
+                    }
+                }
+            }
+            
+            lastMoveTime = now;
+            lastMoveX = clientX;
+            lastMoveY = clientY;
+            updateInferences();
+        };
+        
+        // Track scrolling
+        document.addEventListener('scroll', () => {
+            scrollDepths.push(window.scrollY);
+            if (scrollDepths.length > 10) scrollDepths.shift();
+            updateInferences();
+        });
+        
+        // Add appropriate event listeners
+        if (isMobile) {
+            document.addEventListener('touchmove', pointerMoveHandler);
+        } else {
+            document.addEventListener('mousemove', pointerMoveHandler);
+        }
+        
+        // Enhanced inference engine
+        function updateInferences() {
+            // Typing behavior analysis
+            if (keyTimestamps.length > 2) {
+                const recentTypingSpeed = (keyTimestamps[keyTimestamps.length-1] - keyTimestamps[0]) / keyTimestamps.length;
+                const typingAssessment = 
+                    recentTypingSpeed < 200 ? "Fast/nervous input" :
+                    recentTypingSpeed > 500 ? "Deliberate typing" : "Normal input pattern";
+                
+                document.getElementById('keyInference').textContent = typingAssessment;
+                
+                // Stress calculation
+                const stressScore = Math.min(Math.floor(100 - (recentTypingSpeed / 10)), 100);
+                document.getElementById('stressLevel').textContent = `${stressScore}%`;
+                document.getElementById('stressInference').textContent = 
+                    stressScore > 70 ? "Highly engaged" :
+                    stressScore > 40 ? "Moderate activity" : "Calm/relaxed";
+            }
+            
+            // Movement analysis (different for mobile/desktop)
+            if (isMobile ? touchEvents.length > 0 : moveSpeeds.length > 0) {
+                const speeds = isMobile ? touchEvents : moveSpeeds;
+                const avgSpeed = speeds.reduce((a,b) => a + b, 0) / speeds.length;
+                const speedVariance = Math.max(...speeds) - Math.min(...speeds);
+                
+                if (isMobile) {
+                    document.getElementById('touchInference').textContent = 
+                        avgSpeed > 300 ? "Erratic swiping" :
+                        avgSpeed > 100 ? "Active scrolling" : "Precise touches";
+                } else {
+                    document.getElementById('moveInference').textContent = 
+                        avgSpeed > 500 ? "Erratic movements" :
+                        avgSpeed > 200 ? "Active browsing" : "Precise control";
+                }
+                
+                // Age estimation
+                const interactionData = [
+                    avgSpeed,
+                    speedVariance,
+                    keyTimestamps.length > 0 ? (keyTimestamps[keyTimestamps.length-1] - keyTimestamps[0]) / keyTimestamps.length : 300,
+                    scrollDepths.length
+                ];
+                
+                let ageGuess = "";
+                if (interactionData[1] > 300 && interactionData[3] > 5) {
+                    ageGuess = "15-25 (digital native)";
+                } 
+                else if (interactionData[1] > 150 || interactionData[3] > 2) {
+                    ageGuess = "25-40 (tech comfortable)";
+                } 
+                else {
+                    ageGuess = "40+ (methodical)";
+                }
+                
+                document.getElementById('ageEstimate').textContent = ageGuess;
+                document.getElementById('ageInference').textContent = 
+                    `Based on ${isMobile ? 'touch' : 'mouse'} patterns`;
+            }
+        }
+        
+        // =================================
+        // SYSTEM SCAN (ENHANCED FOR MOBILE)
+        // =================================
+        async function runDeepScan() {
+            const output = document.getElementById('output');
+            const status = document.getElementById('scanStatus');
+            
+            // Phase 1: Device Profiling
+            updateStatus(status, "[PHASE 1] Hardware interrogation...");
+            
+            const ram = navigator.deviceMemory || "Unknown";
+            const cores = navigator.hardwareConcurrency || "Unknown";
+            let gpu = "Unknown";
+            
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl');
+                gpu = gl.getParameter(gl.RENDERER);
+            } catch (e) {}
+            
+            // Plugin detection
+            const plugins = isMobile ? "Mobile plugins not detectable" : 
+                Array.from(navigator.plugins).map(p => p.name).join(', ') || "None detectable";
+            
+            await delay(1500);
+            completeStatus(status);
+            
+            output.innerHTML += `
+                <p>> <span class="command">device_profile.exe</span> results:</p>
+                <p>> Device: <span class="command">${isMobile ? "Mobile" : "Desktop"}</span></p>
+                <p>> OS: <span class="command">${navigator.platform}</span> → <span class="inference">${navigator.platform.includes("Win") ? "Windows exploit surface: 82%" : "Alternative OS vulnerabilities"}</span></p>
+                <p>> RAM: <span class="command">${ram}GB</span> → <span class="inference">${ram >= 8 ? "High-performance system" : "Standard memory"}</span></p>
+                <p>> CPU: <span class="command">${cores} cores</span> → <span class="inference">${cores >= 4 ? "Multi-core processing" : "Basic compute"}</span></p>
+                <p>> GPU: <span class="command">${gpu}</span> → <span class="inference">${gpu.includes("NVIDIA") ? "Hardware acceleration" : "Standard rendering"}</span></p>
+                ${!isMobile ? `<p>> Plugins: <span class="command">${plugins}</span> → <span class="inference">${plugins.includes("Flash") ? "Critical vulnerability" : "Standard extensions"}</span></p>` : ''}
+                <p class="critical">> DEVICE CLASS: ${isMobile ? "MOBILE DEVICE" : "DESKTOP WORKSTATION"}</p>
+            `;
+            
+            // Phase 2: Network Analysis
+            updateStatus(status, "[PHASE 2] Network penetration...");
+            
+            let ipData = { ip: "Blocked" };
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                ipData = await response.json();
+            } catch (e) {
+                console.log("IP detection blocked");
+            }
+            
+            const connection = navigator.connection || {};
+            const networkType = connection.effectiveType || "Unknown";
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            
+            await delay(1500);
+            completeStatus(status);
+            
+            output.innerHTML += `
+                <p>> <span class="command">network_scan.exe</span> results:</p>
+                <p>> Public IP: <span class="command">${ipData.ip}</span> → <span class="inference">${ipData.ip !== "Blocked" ? "Geolocation accuracy: ~5km" : "VPN/Tor suspected"}</span></p>
+                <p>> Network: <span class="command">${networkType}</span> → <span class="inference">${networkType.includes("wifi") ? "Residential router" : "Mobile carrier"}</span></p>
+                <p>> Timezone: <span class="command">${tz}</span> → <span class="inference">${tz.includes("America") ? "Western hemisphere" : "International"}</span></p>
+                <p>> Bandwidth: <span class="command">${connection.downlink || "Unknown"}Mbps</span> → <span class="inference">${connection.downlink > 10 ? "High-speed" : "Standard"}</span></p>
+                <p class="critical">> NETWORK EXPOSURE: ${ipData.ip !== "Blocked" ? "HIGH" : "MODERATE"}</p>
+            `;
+            
+            // Phase 3: Digital Footprint
+            updateStatus(status, "[PHASE 3] Digital footprint analysis...");
+            
+            // Site visitation inference
+            const siteMarkers = [];
+            
+            // User agent detection
+            const ua = navigator.userAgent;
+            if (ua.includes("FBAN") || ua.includes("FBAV")) siteMarkers.push("Facebook user");
+            if (ua.includes("Instagram")) siteMarkers.push("Instagram user");
+            if (ua.includes("Twitter")) siteMarkers.push("Twitter/X user");
+            if (ua.includes("YouTube")) siteMarkers.push("YouTube user");
+            
+            // Font detection (limited to most common)
+            const testFonts = ['Amazon Ember', 'Facebook Letter Faces', 'TwitterChirp', 'YouTube Sans'];
+            for (const font of testFonts) {
+                if (document.fonts.check(`12px "${font}"`)) {
+                    if (font.includes("Amazon")) siteMarkers.push("Amazon user");
+                    if (font.includes("Facebook")) siteMarkers.push("Facebook user");
+                    if (font.includes("Twitter")) siteMarkers.push("Twitter/X user");
+                    if (font.includes("YouTube")) siteMarkers.push("YouTube user");
+                }
+            }
+            
+            await delay(1500);
+            completeStatus(status);
+            
+            output.innerHTML += `
+                <p>> <span class="command">footprint_analyzer.exe</span> results:</p>
+                ${siteMarkers.length > 0 ? 
+                    siteMarkers.map(m => `<p>> <span class="inference">${m}</span></p>`).join('') : 
+                    '<p>> <span class="command">No strong site markers detected</span></p>'}
+                <p>> Language: <span class="command">${navigator.language}</span> → <span class="inference">${navigator.language.includes("EN") ? "English-language" : "Multilingual"}</span></p>
+                <p class="critical">> PROFILE CONFIDENCE: ${siteMarkers.length > 0 ? "HIGH" : "LOW"}</p>
+            `;
+            
+            // Final Report
+            updateStatus(status, "[FINAL] Compiling psychographic profile...");
+            await delay(2000);
+            completeStatus(status);
+
+            
+            const ageEstimate = document.getElementById('ageEstimate').textContent;
+            const stressInference = document.getElementById('stressInference').textContent;
+            const movementInference = isMobile ? 
+                document.getElementById('touchInference').textContent : 
+                document.getElementById('moveInference').textContent;
+            const deviceType = isMobile ? "Mobile" : "Desktop";
+            const networkExposure = ipData.ip !== "Blocked" ? "HIGH" : "MODERATE";
+            const profileConfidence = siteMarkers.length > 0 ? "HIGH" : "LOW";
+
+            // Add threat assessment
+            output.innerHTML += `
+                <br>
+                <div class="terminal threat-assessment">
+                    <p class="warning">POTENTIAL EXPLOITATION USE CASES:</p>
+                    <ul>
+                        <li>Age profile (${ageEstimate}) → Targeted phishing lures for generational biases</li>
+                        <li>Stress patterns (${stressInference}) → Timing attacks during high cognitive load</li>
+                        <li>${isMobile ? 'Touch' : 'Mouse'} behavior (${movementInference}) → UI manipulation based on interaction patterns</li>
+                        <li>Device type (${deviceType}) → ${deviceType}-crypto mining hack potential</li>
+                        <li>Network exposure (${networkExposure}) → ${networkExposure === 'HIGH' ? 'DDOS attack pawn' : 'Anonymized payloads'}</li>
+                        <li>Profile confidence (${profileConfidence}) → ${profileConfidence === 'HIGH' ? 'Precision social engineering' : 'Spray-and-pray attacks'}</li>
+                    </ul>
+                    <p class="critical">MALICIOUS ACTOR WOULD NOW DEPLOY TAILORED PAYLOAD</p>
+                </div>
+
+                <div class="terminal warning" style="margin-top: 20px;">
+                    <p class="warning">NO DATA LEAVES YOUR MACHINE.</p>
+                    <p>> Open developer options (F12) and check network traffic</p>
+                    <p>> All analysis runs locally in your browser</p>
+                    <br>
+                    <p class="critical">This is a NO-EFFORT tool built and left on the internet</p>
+                    <p class="critical">now imagine what an enemy could do</p>
+                    <p class="critical">now imagine what the matrix could do</p>
+                </div>
+            `;
+
+            // Remove status element
+            status.remove();
+        }
+
+        // Helper functions
+        function updateStatus(element, text) {
+            element.innerHTML = `> ${text}<span class="blink">_</span>`;
+        }
+        
+        function completeStatus(element) {
+            element.innerHTML = element.innerHTML.replace('<span class="blink">_</span>', '');
+        }
+        
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Start the scan
+        setTimeout(() => {
+            runDeepScan().catch(e => {
+                console.error("Scan failed:", e);
+                document.getElementById('scanStatus').innerHTML = "> SYSTEM FAILURE: TRY REFRESHING";
+            });
+        }, 1000);
+    </script>
+</body>
+</html>
